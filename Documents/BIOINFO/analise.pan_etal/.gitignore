@@ -1,0 +1,21 @@
+
+#Ambientes virtuais
+.venv/
+venv/
+__pycache__/
+
+#Dados pessoais
+*.h5ad
+*.mtx
+*.tsv
+*.csv
+*.fastq
+*.gz
+
+#Gráficos gerados
+figures/
+*.png
+*.pdf
+
+#Arquivos do sistema
+.vscode/
