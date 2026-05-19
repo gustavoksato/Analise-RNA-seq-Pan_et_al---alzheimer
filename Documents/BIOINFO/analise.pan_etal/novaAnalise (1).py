@@ -10,8 +10,6 @@ print(adata.obs.columns)
 
 print(adata.var.columns)
 
-
-
 adata.obs['pct_counts_mt'].describe()
 adata.obs['total_counts'].describe()
 adata.obs['n_genes_by_counts'].describe()
