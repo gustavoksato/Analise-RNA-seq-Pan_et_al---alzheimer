@@ -4,6 +4,9 @@
 venv/
 __pycache__/
 
+#-----------
+_original*
+
 #Dados pessoais
 *.h5ad
 *.mtx

@@ -1,0 +1,38 @@
+import scanpy as sc
+import anndata as ad
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import sys
+
+from sklearn.preprocessing import StandardScaler # importando somente o StandardScaler do scikit-learn
+from sklearn.feature_selection import * # importando todas as funções específicas de seleção de atributos do scikit-learn
+from sklearn.decomposition import * # importando todas as funções específicas para a extração de atributos do scikit-learn
+from sklearn.cluster import * # importando todas as funções específicas para o agrupamento
+sys.path.append('/home/gustavo-k-sato/Documentos/GUSTAVO_ESTUDOS/BIOINFORMÁTICA/sweeppacote')
+import scipy.io
+import sweeppacote as sp
+
+scipy.io.mmwrite("Matriz_Pan.mtx", matriz)
+
+adata_limpo = sc.read_h5ad("Documents/BIOINFO/analise.pan_etal/Pan_limpo.h5ad")
+adata_limpo.X
+matriz = adata_limpo.X
+adata_limpo.shape
+print(adata_limpo.var.columns)
+
+print(adata_limpo.obs.columns)
+
+print(adata_limpo.obs.columns)
+
+
+matriz.write_mtx("Matriz_Pan.mtx")  
+
+sc.pl.violin(adata_limpo, ['n_genes_by_counts', 'total_counts', 'pct_counts_mt'], jitter=0.4, multi_panel=True, save="swpBRUTO")
+sc.pp.calculate_qc_metrics(adata_limpo, qc_vars=["mt", "ribo", "hb"], inplace=True, log1p=False)
+
+
+
+
+
+
