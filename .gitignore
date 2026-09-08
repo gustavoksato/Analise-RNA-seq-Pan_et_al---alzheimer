@@ -1,0 +1,26 @@
+# Ambientes e IDEs
+.venv/
+.vscode/
+__pycache__/
+*.pyc
+
+# R e RStudio
+.RData
+.Rhistory
+
+# Dados pesados e matrizes de contagem
+*.h5ad
+*.mtx
+*.tsv
+*.csv
+*.txt
+*.pth
+*.pkl
+*.pdf
+*.png
+
+nohup.out
+
+# Não ignorar scripts ou configurações mesmo que casem com regras acima
+!.gitignore
+!codigosoriginaisPan.txt
