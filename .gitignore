@@ -19,6 +19,11 @@ __pycache__/
 *.pdf
 *.png
 
+.RDataTmp*
+*.zip
+*.tar.gz
+*.7z
+EOF
 nohup.out
 
 # Não ignorar scripts ou configurações mesmo que casem com regras acima
