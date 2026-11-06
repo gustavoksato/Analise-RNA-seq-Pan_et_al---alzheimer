@@ -6,13 +6,15 @@ import matplotlib.pyplot as plt
 import scipy.io as sio
 
 print("1. Carregando dados brutos...")
-adata_completo = sc.read_h5ad("BIOINFO/analise.pan_etal/GSE267301_Full_Dataset.h5ad")
-adata = ad.AnnData(
-    X = adata_completo.layers['nuclear_original'].copy(),
-    obs = adata_completo.obs.copy(),
-    var = adata_completo.var.copy()
-)
-del adata_completo
+#adata_completo = sc.read_h5ad("BIOINFO/analise.pan_etal/GSE267301_Full_Dataset.h5ad")
+#adata = ad.AnnData(
+#    X = adata_completo.layers['nuclear_original'].copy(),
+#    obs = adata_completo.obs.copy(),
+#    var = adata_completo.var.copy()
+#)
+#del adata_completo
+
+adata = sc.read_h5ad("segundodataset.h5ad")
 
 print(adata.var.columns)
 print(adata.obs.columns)

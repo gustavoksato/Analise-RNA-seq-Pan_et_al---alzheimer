@@ -75,7 +75,7 @@ linhas_base = X_matisse.row[mask]
 colunas_old = X_matisse.col[mask]
 dados_base = X_matisse.data[mask]
 
-# Traduz as coordenadas para o padrão do PAN
+# Traduz as coordenadas para o padrão2026 do PAN
 mapper = np.zeros(max(colunas_old.max() + 1, len(matisse_genes)), dtype=np.int32)
 for old, new in old_to_new_col.items():
     mapper[old] = new

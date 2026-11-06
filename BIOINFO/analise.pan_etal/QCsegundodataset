@@ -1,0 +1,86 @@
+import scanpy as sc
+import pandas as pd
+import numpy as np
+import scipy.sparse as sp
+import scipy.io as sio
+import gc  # Módulo crítico para gerenciamento de RAM
+
+print("1. Carregamento e Isolamento de Lote")
+adata = sc.read_h5ad("segundodataset.h5ad")
+adata = adata[(adata.obs['assay'] == "10x 3' v3") & (adata.obs['tissue'] == "primary motor cortex")].copy()
+
+print("2. Restauração do Cofre Bruto")
+adata.X = adata.raw.X.copy()
+del adata.raw
+gc.collect() # Força a limpeza da memória RAM imediatamente
+
+print("3. Recálculo de QC e Corte de Doublets")
+sc.pp.calculate_qc_metrics(adata, percent_top=None, log1p=False, inplace=True)
+adata = adata[adata.obs['n_genes_by_counts'] < 8000, :].copy()
+
+print("4. Normalização Gabarito e Binarização In-Place")
+sc.pp.log1p(adata, base=2)
+
+# OTIMIZAÇÃO 1: Altera apenas os valores não-zero existentes para 1.0 (Custo ZERO de RAM)
+if not sp.isspmatrix_csr(adata.X):
+    adata.X = adata.X.tocsr()
+adata.X.data = np.ones_like(adata.X.data, dtype=np.float32)
+
+print("5. Carregamento do Espaço Latente (Referência PAN)")
+pan_features = pd.read_csv("features_bin.tsv", sep='\t', header=None)[0].tolist()
+
+presentes = adata.var_names.intersection(pan_features)
+genes_presentes_ordenados = [g for g in pan_features if g in presentes]
+genes_ausentes = [g for g in pan_features if g not in presentes]
+
+print("6. Isolamento Vetorial e Liberação do Objeto Principal")
+adata_sub = adata[:, genes_presentes_ordenados].copy()
+
+# OTIMIZAÇÃO 2: Destruição do adata original (Libera GBs de RAM)
+del adata
+gc.collect()
+
+print("7. Construção CSR Direta do Tensor de Ruído (0.5)")
+n_rows = adata_sub.n_obs
+n_cols_missing = len(genes_ausentes)
+nnz_05 = n_rows * n_cols_missing
+
+# OTIMIZAÇÃO 3: Constrói a matriz esparsa diretamente, sem NUNCA criar matriz densa
+data_05 = np.full(nnz_05, 0.5, dtype=np.float32)
+indices_05 = np.tile(np.arange(n_cols_missing, dtype=np.int32), n_rows)
+indptr_05 = np.arange(0, nnz_05 + 1, n_cols_missing, dtype=np.int32)
+matriz_05 = sp.csr_matrix((data_05, indices_05, indptr_05), shape=(n_rows, n_cols_missing))
+
+print("8. Empilhamento e Alinhamento Espacial")
+X_temp = sp.hstack([adata_sub.X, matriz_05], format='csr')
+
+# Libera os blocos que já foram fundidos
+del matriz_05
+gc.collect()
+
+ordem_temporaria = genes_presentes_ordenados + genes_ausentes
+mapa_ordem = {gene: idx for idx, gene in enumerate(ordem_temporaria)}
+indices_finais = [mapa_ordem[g] for g in pan_features]
+
+# OTIMIZAÇÃO 4: Reordena e destrói matriz temporária no mesmo passo
+X_final = X_temp[:, indices_finais]
+del X_temp
+gc.collect()
+
+print("9. Processamento Dinâmico de Rótulos")
+tipos_unicos = adata_sub.obs['cell_type'].dropna().unique()
+dicionario_map = {tipo: idx + 1 for idx, tipo in enumerate(tipos_unicos)}
+
+filtro_na = ~adata_sub.obs['cell_type'].isna()
+X_final = X_final[filtro_na, :]
+adata_sub = adata_sub[filtro_na].copy()
+adata_sub.obs['Cell_Type_Num'] = adata_sub.obs['cell_type'].map(dicionario_map).astype(int)
+
+print("10. Exportação dos Tensores Finais")
+print(f"Dimensionalidade Final: {X_final.shape}")
+
+# Alerta de Armazenamento: O arquivo .mtx final pode ter entre 15GB e 20GB no HD devido ao bilhão de elementos.
+sio.mmwrite("Matriz_ALS_Alinhada_05.mtx", X_final)
+adata_sub.obs[['Cell_Type_Num']].to_csv("Rotulos_ALS_Alinhados.csv", index=False)
+pd.DataFrame(list(dicionario_map.items()), columns=['cell_type', 'ID']).to_csv("Legenda_Rotulos_ALS.csv", index=False)
+print("Pipeline de alta performance concluído.")
